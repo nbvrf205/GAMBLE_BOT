@@ -120,14 +120,6 @@ def handle_message(sock, user, msg):
     except Exception as e:
         print(f"Error: {e}")
 
-def keepalive(sock):
-    while True:
-        time.sleep(120)
-        try:
-            sock.sendall(b"PING :tmi.twitch.tv\r\n")
-        except:
-            break
-
 def main():
     load_scores()
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -137,36 +129,34 @@ def main():
     sock.sendall(f"NICK {NICK}\r\n".encode("utf-8"))
     sock.sendall(f"JOIN {CHANNEL}\r\n".encode("utf-8"))
     sock.settimeout(60)
-    threading.Thread(target=keepalive, args=(sock,), daemon=True).start()
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
-    last_msg = time.time()
+    last_activity = time.time()
     while True:
         try:
             raw = sock.recv(2048)
             if not raw:
-                print("Connection closed by server, reconnecting in 5s...")
-                time.sleep(5)
-                main()
-                return
-            data = raw.decode("utf-8", errors="replace")
-        except socket.timeout:
-            if time.time() - last_msg > 300:
-                print("No messages for 5 min, reconnecting...")
-                sock.close()
+                print("Connection closed by server, reconnecting in 3s...")
                 time.sleep(3)
                 main()
                 return
-            continue
+            data = raw.decode("utf-8", errors="replace")
+            last_activity = time.time()
+        except socket.timeout:
+            print(f"No data for 60s, reconnecting...")
+            sock.close()
+            time.sleep(3)
+            main()
+            return
         except (ConnectionResetError, BrokenPipeError):
-            print("Connection lost, reconnecting in 5s...")
-            time.sleep(5)
+            print("Connection lost, reconnecting in 3s...")
+            time.sleep(3)
             main()
             return
         except OSError:
-            print("Socket error, reconnecting in 5s...")
-            time.sleep(5)
+            print("Socket error, reconnecting in 3s...")
+            time.sleep(3)
             main()
             return
         buffer += data
@@ -184,8 +174,6 @@ def main():
                 time.sleep(3)
                 main()
                 return
-            if "PRIVMSG" in line:
-                last_msg = time.time()
             match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
             if match:
                 threading.Thread(target=handle_message, args=(sock, match.group(1), match.group(2)), daemon=True).start()
