@@ -128,27 +128,21 @@ def main():
     sock.sendall(f"PASS {TOKEN}\r\n".encode("utf-8"))
     sock.sendall(f"NICK {NICK}\r\n".encode("utf-8"))
     sock.sendall(f"JOIN {CHANNEL}\r\n".encode("utf-8"))
-    sock.settimeout(60)
+    sock.settimeout(0.1)
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
-    last_activity = time.time()
     while True:
         try:
             raw = sock.recv(2048)
             if not raw:
-                print("Connection closed by server, reconnecting in 3s...")
+                print("Connection closed, reconnecting in 3s...")
                 time.sleep(3)
                 main()
                 return
             data = raw.decode("utf-8", errors="replace")
-            last_activity = time.time()
         except socket.timeout:
-            print(f"No data for 60s, reconnecting...")
-            sock.close()
-            time.sleep(3)
-            main()
-            return
+            continue
         except (ConnectionResetError, BrokenPipeError):
             print("Connection lost, reconnecting in 3s...")
             time.sleep(3)
