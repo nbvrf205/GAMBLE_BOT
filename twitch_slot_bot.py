@@ -88,6 +88,8 @@ def cmd_lucky(sock, user):
     luck = random.randint(0, 100)
     if user == "opilkj7":
         luck //= 10
+    elif user == "desertcat":
+        luck = -random.randint(0, 100)
     resp = f"🍀 @{user} твоя удача {luck}%"
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
