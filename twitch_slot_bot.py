@@ -178,6 +178,12 @@ def main():
             if line.startswith("PING"):
                 sock.sendall(f"PONG {line.split()[1]}\r\n".encode("utf-8"))
                 continue
+            if "RECONNECT" in line:
+                print("Twitch requested reconnect, reconnecting...")
+                sock.close()
+                time.sleep(3)
+                main()
+                return
             if "PRIVMSG" in line:
                 last_msg = time.time()
             match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
