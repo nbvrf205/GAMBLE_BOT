@@ -17,9 +17,17 @@ cd GAMBLE_BOT
 | Поле | Описание |
 |------|----------|
 | `NICK` | Имя твич-аккаунта бота |
-| `TOKEN` | OAuth токен (получить на https://twitchtokengenerator.com/) |
+| `TOKEN` | OAuth токен, с префиксом `oauth:` (см. ниже как получить) |
 | `CHANNEL` | Канал для работы, с `#` (например `#мойканал`) |
 | `OWNER` | Твой ник — у владельца нет 10-минутного кулдауна |
+
+## Как получить токен
+
+1. Открой https://twitchtokengenerator.com/
+2. Выбери **Chat Bot** (или отметь `chat:read` + `chat:edit`)
+3. Нажми **Generate Token!** и авторизуйся через Twitch
+4. Скопируй полученный `access_token`
+5. В `config.py` укажи: `TOKEN = "oauth:скопированный_токен"`
 
 ## Запуск
 
