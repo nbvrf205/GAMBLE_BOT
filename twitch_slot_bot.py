@@ -118,6 +118,14 @@ def handle_message(sock, user, msg):
     except Exception as e:
         print(f"Error: {e}")
 
+def keepalive(sock):
+    while True:
+        time.sleep(120)
+        try:
+            sock.sendall(b"PING :tmi.twitch.tv\r\n")
+        except:
+            break
+
 def main():
     load_scores()
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -127,6 +135,7 @@ def main():
     sock.sendall(f"NICK {NICK}\r\n".encode("utf-8"))
     sock.sendall(f"JOIN {CHANNEL}\r\n".encode("utf-8"))
     sock.settimeout(300)
+    threading.Thread(target=keepalive, args=(sock,), daemon=True).start()
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
