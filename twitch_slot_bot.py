@@ -109,6 +109,10 @@ def cmd_d20(sock, user):
     resp = f"🎲 @{user} бросает d20... {roll}"
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
+def cmd_help(sock, user):
+    resp = f"@{user} Доступные команды: !slots (слоты), !lucky (удача 0-100), !d20 (кость 1-20)"
+    sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
+
 def handle_message(sock, user, msg):
     try:
         text = msg.strip().lower()
@@ -118,6 +122,8 @@ def handle_message(sock, user, msg):
             cmd_lucky(sock, user)
         elif text.startswith("!d20"):
             cmd_d20(sock, user)
+        elif text.startswith("!help"):
+            cmd_help(sock, user)
     except Exception as e:
         print(f"Error: {e}")
 
