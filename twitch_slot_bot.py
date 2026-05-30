@@ -65,7 +65,8 @@ def cmd_slots(sock, user):
         sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !slots\r\n".encode("utf-8"))
         return
     last_used[user] = now
-    time.sleep(2.0)
+    if user == OWNER:
+        time.sleep(2.0)
     r = spin()
     win_type, prize = check_win(r)
     if user not in scores:
@@ -86,7 +87,8 @@ def cmd_lucky(sock, user):
         sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !lucky\r\n".encode("utf-8"))
         return
     last_used[user] = now
-    time.sleep(2.0)
+    if user == OWNER:
+        time.sleep(2.0)
     luck = random.randint(0, 100)
     if user == "opilkj7":
         luck //= 10
