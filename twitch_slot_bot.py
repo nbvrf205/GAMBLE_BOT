@@ -57,16 +57,21 @@ def check_win(r):
         return "PAIR", PRIZES["PAIR"]
     return None, 0
 
-def cmd_slots(sock, user):
+def check_cooldown(sock, user, cmd_name):
     now = time.time()
     cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
     if user in last_used and now - last_used[user] < cd:
         remaining = int(cd - (now - last_used[user]))
-        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !slots\r\n".encode("utf-8"))
-        return
+        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед {cmd_name}\r\n".encode("utf-8"))
+        return False
     last_used[user] = now
     if user == OWNER:
         time.sleep(2.0)
+    return True
+
+def cmd_slots(sock, user):
+    if not check_cooldown(sock, user, "!slots"):
+        return
     r = spin()
     win_type, prize = check_win(r)
     if user not in scores:
@@ -80,15 +85,8 @@ def cmd_slots(sock, user):
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
 def cmd_lucky(sock, user):
-    now = time.time()
-    cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
-    if user in last_used and now - last_used[user] < cd:
-        remaining = int(cd - (now - last_used[user]))
-        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !lucky\r\n".encode("utf-8"))
+    if not check_cooldown(sock, user, "!lucky"):
         return
-    last_used[user] = now
-    if user == OWNER:
-        time.sleep(2.0)
     luck = random.randint(0, 100)
     if user == "opilkj7":
         luck //= 10
@@ -96,20 +94,15 @@ def cmd_lucky(sock, user):
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
 def cmd_d20(sock, user):
-    now = time.time()
-    cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
-    if user in last_used and now - last_used[user] < cd:
-        remaining = int(cd - (now - last_used[user]))
-        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !d20\r\n".encode("utf-8"))
+    if not check_cooldown(sock, user, "!d20"):
         return
-    last_used[user] = now
-    if user == OWNER:
-        time.sleep(2.0)
     roll = random.randint(1, 20)
     resp = f"🎲 @{user} бросает d20... {roll}"
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
 def cmd_help(sock, user):
+    if not check_cooldown(sock, user, "!help"):
+        return
     resp = f"@{user} Доступные команды: !slots (слоты), !lucky (удача 0-100), !d20 (кость 1-20)"
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
