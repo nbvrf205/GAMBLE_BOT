@@ -132,39 +132,40 @@ def main():
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
-    last_privmsg = time.time()
-    reconnect_timer = time.time()
+    last_any = time.time()
+    awaiting_pong = False
+    ping_time = 0
     while True:
         now = time.time()
-        if now - reconnect_timer > 1800:
-            print("30 min passed, reconnecting to keep connection fresh...")
+        if awaiting_pong and now - ping_time > 5:
+            print("No PONG within 5s, reconnecting...")
             sock.close()
             time.sleep(3)
             main()
             return
-        if now - last_privmsg > 120:
-            print("No messages for 2 min, reconnecting...")
-            sock.close()
-            time.sleep(3)
-            main()
-            return
+        if not awaiting_pong and now - last_any > 20:
+            sock.sendall(b"PING :keepalive\r\n")
+            awaiting_pong = True
+            ping_time = now
         try:
             raw = sock.recv(2048)
             if not raw:
-                print("Connection closed, reconnecting in 3s...")
+                print("Connection closed, reconnecting...")
                 time.sleep(3)
                 main()
                 return
             data = raw.decode("utf-8", errors="replace")
+            last_any = time.time()
+            awaiting_pong = False
         except socket.timeout:
             continue
         except (ConnectionResetError, BrokenPipeError):
-            print("Connection lost, reconnecting in 3s...")
+            print("Connection lost, reconnecting...")
             time.sleep(3)
             main()
             return
         except OSError:
-            print("Socket error, reconnecting in 3s...")
+            print("Socket error, reconnecting...")
             time.sleep(3)
             main()
             return
@@ -178,13 +179,11 @@ def main():
                 sock.sendall(f"PONG {line.split()[1]}\r\n".encode("utf-8"))
                 continue
             if "RECONNECT" in line:
-                print("Twitch requested reconnect, reconnecting...")
+                print("Twitch requested reconnect...")
                 sock.close()
                 time.sleep(3)
                 main()
                 return
-            if "PRIVMSG" in line:
-                last_privmsg = time.time()
             match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
             if match:
                 threading.Thread(target=handle_message, args=(sock, match.group(1), match.group(2)), daemon=True).start()
