@@ -5,8 +5,8 @@
 ## Установка
 
 ```bash
-git clone https://github.com/твой_юзер/твой_репо.git
-cd твой_репо
+git clone https://github.com/nbvrf205/GAMBLE_BOT.git
+cd GAMBLE_BOT
 ```
 
 ## Настройка
