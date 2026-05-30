@@ -7,14 +7,12 @@ import json
 import os
 
 try:
-    from config import NICK, TOKEN, CHANNEL, OWNER
+    from config import NICK, TOKEN, CHANNEL, OWNER, COOLDOWN_OWNER, COOLDOWN_OTHER
 except ImportError:
     print("Создай config.py из config.example.py и заполни свои данные")
     exit(1)
 
 SCORE_FILE = "slots_scores.json"
-COOLDOWN_OWNER = 3
-COOLDOWN_OTHER = 600
 
 REELS = ["🍒", "🍇", "🍊", "🍋", "🍉", "💎", "⭐", "7️⃣", "BAR"]
 JACKPOT = ["💎", "💎", "💎"]
