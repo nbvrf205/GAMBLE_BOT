@@ -136,11 +136,12 @@ def main():
     sock.sendall(f"PASS {TOKEN}\r\n".encode("utf-8"))
     sock.sendall(f"NICK {NICK}\r\n".encode("utf-8"))
     sock.sendall(f"JOIN {CHANNEL}\r\n".encode("utf-8"))
-    sock.settimeout(300)
+    sock.settimeout(60)
     threading.Thread(target=keepalive, args=(sock,), daemon=True).start()
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
+    last_msg = time.time()
     while True:
         try:
             raw = sock.recv(2048)
@@ -151,9 +152,20 @@ def main():
                 return
             data = raw.decode("utf-8", errors="replace")
         except socket.timeout:
+            if time.time() - last_msg > 300:
+                print("No messages for 5 min, reconnecting...")
+                sock.close()
+                time.sleep(3)
+                main()
+                return
             continue
         except (ConnectionResetError, BrokenPipeError):
             print("Connection lost, reconnecting in 5s...")
+            time.sleep(5)
+            main()
+            return
+        except OSError:
+            print("Socket error, reconnecting in 5s...")
             time.sleep(5)
             main()
             return
@@ -166,6 +178,8 @@ def main():
             if line.startswith("PING"):
                 sock.sendall(f"PONG {line.split()[1]}\r\n".encode("utf-8"))
                 continue
+            if "PRIVMSG" in line:
+                last_msg = time.time()
             match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
             if match:
                 threading.Thread(target=handle_message, args=(sock, match.group(1), match.group(2)), daemon=True).start()
