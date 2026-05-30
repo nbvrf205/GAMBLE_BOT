@@ -57,31 +57,49 @@ def check_win(r):
         return "PAIR", PRIZES["PAIR"]
     return None, 0
 
+def cmd_slots(sock, user):
+    now = time.time()
+    cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
+    if user in last_used and now - last_used[user] < cd:
+        remaining = int(cd - (now - last_used[user]))
+        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !slots\r\n".encode("utf-8"))
+        return
+    last_used[user] = now
+    if user != OWNER:
+        time.sleep(2.0)
+    r = spin()
+    win_type, prize = check_win(r)
+    if user not in scores:
+        scores[user] = 0
+    scores[user] += prize
+    save_scores()
+    if win_type:
+        resp = f"🎰 {user} [{result_text(r)}] {prize} очков! Баланс: {scores[user]}"
+    else:
+        resp = f"🎰 {user} [{result_text(r)}] Повезёт в следующий раз! Баланс: {scores[user]}"
+    sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
+
+def cmd_lucky(sock, user):
+    now = time.time()
+    cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
+    if user in last_used and now - last_used[user] < cd:
+        remaining = int(cd - (now - last_used[user]))
+        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !lucky\r\n".encode("utf-8"))
+        return
+    last_used[user] = now
+    if user != OWNER:
+        time.sleep(2.0)
+    luck = random.randint(0, 100)
+    resp = f"🍀 @{user} твоя удача {luck}%"
+    sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
+
 def handle_message(sock, user, msg):
     try:
-        if not msg.strip().lower().startswith("!slots"):
-            return
-        now = time.time()
-        cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
-        if user in last_used and now - last_used[user] < cd:
-            remaining = int(cd - (now - last_used[user]))
-            sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !slots\r\n".encode("utf-8"))
-            return
-        last_used[user] = now
-        if user != OWNER:
-            time.sleep(2.0)
-        r = spin()
-        win_type, prize = check_win(r)
-        if user not in scores:
-            scores[user] = 0
-        scores[user] += prize
-        save_scores()
-
-        if win_type:
-            resp = f"🎰 {user} [{result_text(r)}] {prize} очков! Баланс: {scores[user]}"
-        else:
-            resp = f"🎰 {user} [{result_text(r)}] Повезёт в следующий раз! Баланс: {scores[user]}"
-        sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
+        text = msg.strip().lower()
+        if text.startswith("!slots"):
+            cmd_slots(sock, user)
+        elif text.startswith("!lucky"):
+            cmd_lucky(sock, user)
     except Exception as e:
         print(f"Error: {e}")
 
