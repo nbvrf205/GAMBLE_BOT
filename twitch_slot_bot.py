@@ -132,7 +132,22 @@ def main():
     print(f"Bot {NICK} running in {CHANNEL}")
 
     buffer = ""
+    last_privmsg = time.time()
+    reconnect_timer = time.time()
     while True:
+        now = time.time()
+        if now - reconnect_timer > 1800:
+            print("30 min passed, reconnecting to keep connection fresh...")
+            sock.close()
+            time.sleep(3)
+            main()
+            return
+        if now - last_privmsg > 120:
+            print("No messages for 2 min, reconnecting...")
+            sock.close()
+            time.sleep(3)
+            main()
+            return
         try:
             raw = sock.recv(2048)
             if not raw:
@@ -168,6 +183,8 @@ def main():
                 time.sleep(3)
                 main()
                 return
+            if "PRIVMSG" in line:
+                last_privmsg = time.time()
             match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
             if match:
                 threading.Thread(target=handle_message, args=(sock, match.group(1), match.group(2)), daemon=True).start()
