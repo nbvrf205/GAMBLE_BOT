@@ -132,7 +132,13 @@ def main():
     buffer = ""
     while True:
         try:
-            data = sock.recv(2048).decode("utf-8", errors="replace")
+            raw = sock.recv(2048)
+            if not raw:
+                print("Connection closed by server, reconnecting in 5s...")
+                time.sleep(5)
+                main()
+                return
+            data = raw.decode("utf-8", errors="replace")
         except socket.timeout:
             continue
         except (ConnectionResetError, BrokenPipeError):
