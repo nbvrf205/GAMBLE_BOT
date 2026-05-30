@@ -95,6 +95,20 @@ def cmd_lucky(sock, user):
     resp = f"🍀 @{user} твоя удача {luck}%"
     sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
 
+def cmd_d20(sock, user):
+    now = time.time()
+    cd = COOLDOWN_OWNER if user == OWNER else COOLDOWN_OTHER
+    if user in last_used and now - last_used[user] < cd:
+        remaining = int(cd - (now - last_used[user]))
+        sock.sendall(f"PRIVMSG {CHANNEL} :@{user} Подожди {remaining} сек перед !d20\r\n".encode("utf-8"))
+        return
+    last_used[user] = now
+    if user == OWNER:
+        time.sleep(2.0)
+    roll = random.randint(1, 20)
+    resp = f"🎲 @{user} бросает d20... {roll}"
+    sock.sendall(f"PRIVMSG {CHANNEL} :{resp}\r\n".encode("utf-8"))
+
 def handle_message(sock, user, msg):
     try:
         text = msg.strip().lower()
@@ -102,6 +116,8 @@ def handle_message(sock, user, msg):
             cmd_slots(sock, user)
         elif text.startswith("!lucky"):
             cmd_lucky(sock, user)
+        elif text.startswith("!d20"):
+            cmd_d20(sock, user)
     except Exception as e:
         print(f"Error: {e}")
 
