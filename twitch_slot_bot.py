@@ -184,7 +184,9 @@ def main():
                 time.sleep(3)
                 main()
                 return
-            match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), line)
+            # Strip IRCv3 tags (Twitch sends messages prefixed with @tags...)
+            msg = line.split(' ', 1)[-1] if line.startswith('@') else line
+            match = re.search(r":(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG {} :(.+)".format(re.escape(CHANNEL)), msg)
             if match:
                 threading.Thread(target=handle_message, args=(sock, match.group(1), match.group(2)), daemon=True).start()
 
